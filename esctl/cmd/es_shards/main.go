@@ -9,7 +9,6 @@ import (
 	"github.com/matthew-hollick/elasticsearch-cli/pkg/config"
 	"github.com/matthew-hollick/elasticsearch-cli/pkg/format"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // Command line flags
@@ -72,61 +71,8 @@ func main() {
 
 // initConfig reads in config file and ENV variables if set
 func initConfig(cmd *cobra.Command, args []string) error {
-	v := viper.New()
-
-	// Use config file from the flag if provided
-	if configFile != "" {
-		v.SetConfigFile(configFile)
-	} else {
-		// Use default config locations
-		v.SetConfigName("config")
-		v.SetConfigType("yaml")
-		v.AddConfigPath(".")
-		v.AddConfigPath("$HOME/.config/esctl")
-		v.AddConfigPath("/etc/esctl")
-	}
-
-	// Set defaults
-	v.SetDefault("elasticsearch.addresses", []string{"http://localhost:9200"})
-	v.SetDefault("output.format", "rich")
-
-	// Read config file if it exists
-	if err := v.ReadInConfig(); err == nil {
-		fmt.Printf("Using config file: %s\n", v.ConfigFileUsed())
-	}
-
-	// Enable environment variable binding
-	v.SetEnvPrefix("ESCTL")
-	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	v.AutomaticEnv()
-
-	// Bind flags to viper
-	if cmd.Flags().Changed("es-addresses") {
-		v.Set("elasticsearch.addresses", addresses)
-	}
-	if cmd.Flags().Changed("es-username") {
-		v.Set("elasticsearch.username", username)
-	}
-	if cmd.Flags().Changed("es-password") {
-		v.Set("elasticsearch.password", password)
-	}
-	if cmd.Flags().Changed("es-ca-cert") {
-		v.Set("elasticsearch.ca_cert", caCert)
-	}
-	if cmd.Flags().Changed("es-insecure") {
-		v.Set("elasticsearch.insecure", insecure)
-	}
-	if cmd.Flags().Changed("es-disable-retry") {
-		v.Set("elasticsearch.disable_retry", disableRetry)
-	}
-	if cmd.Flags().Changed("format") {
-		v.Set("output.format", outputFormat)
-	}
-
-	// Store the viper instance in the context for later use
-	cmd.SetContext(config.WithViper(cmd.Context(), v))
-
-	return nil
+	// Use the centralized config initialization function
+	return config.InitializeConfig(cmd, configFile, addresses, username, password, caCert, insecure, disableRetry, outputFormat)
 }
 
 func run(cmd *cobra.Command, args []string) error {

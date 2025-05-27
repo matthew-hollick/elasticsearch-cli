@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
@@ -123,4 +124,98 @@ func (c *Config) Save(path string) error {
 	}
 
 	return v.WriteConfigAs(path)
+}
+
+// InitializeConfig provides a standardized way to initialize configuration for Cobra commands
+// It handles config file loading, environment variables, and command-line flags
+func InitializeConfig(cmd *cobra.Command, configFile string, addresses []string, username, password, caCert string, insecure, disableRetry bool, outputFormat string) error {
+	return initializeConfigInternal(cmd, configFile, addresses, username, password, caCert, insecure, disableRetry, nil, "", "", "", false, outputFormat)
+}
+
+// InitializeKibanaConfig provides a standardized way to initialize configuration for Cobra commands that use Kibana
+// It handles config file loading, environment variables, and Kibana-specific command-line flags
+func InitializeKibanaConfig(cmd *cobra.Command, configFile string, kbAddresses []string, kbUsername, kbPassword, kbCaCert string, kbInsecure bool, outputFormat string) error {
+	return initializeConfigInternal(cmd, configFile, nil, "", "", "", false, false, kbAddresses, kbUsername, kbPassword, kbCaCert, kbInsecure, outputFormat)
+}
+
+// initializeConfigInternal is the internal implementation of InitializeConfig and InitializeKibanaConfig
+// It handles both Elasticsearch and Kibana configuration
+func initializeConfigInternal(cmd *cobra.Command, configFile string, 
+	esAddresses []string, esUsername, esPassword, esCaCert string, esInsecure, esDisableRetry bool,
+	kbAddresses []string, kbUsername, kbPassword, kbCaCert string, kbInsecure bool,
+	outputFormat string) error {
+	v := viper.New()
+
+	// Use config file from the flag if provided
+	if configFile != "" {
+		v.SetConfigFile(configFile)
+	} else {
+		// Use default config locations
+		v.SetConfigName(defaultConfigName)
+		v.SetConfigType(defaultConfigType)
+		v.AddConfigPath(".")                    // Current directory
+		v.AddConfigPath("$HOME/.config/esctl") // User config directory
+		v.AddConfigPath("/etc/esctl")          // System config directory
+	}
+
+	// Set defaults
+	v.SetDefault("elasticsearch.addresses", []string{"http://localhost:9200"})
+	v.SetDefault("kibana.addresses", []string{"http://localhost:5601"})
+	v.SetDefault("output.format", "rich")
+
+	// Read config file if it exists
+	if err := v.ReadInConfig(); err == nil {
+		fmt.Printf("Using config file: %s\n", v.ConfigFileUsed())
+	}
+
+	// Enable environment variable binding
+	v.SetEnvPrefix("ESCTL")
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+
+	// Bind flags to viper
+	// Elasticsearch flags
+	if cmd.Flags().Changed("es-addresses") && esAddresses != nil {
+		v.Set("elasticsearch.addresses", esAddresses)
+	}
+	if cmd.Flags().Changed("es-username") && esUsername != "" {
+		v.Set("elasticsearch.username", esUsername)
+	}
+	if cmd.Flags().Changed("es-password") && esPassword != "" {
+		v.Set("elasticsearch.password", esPassword)
+	}
+	if cmd.Flags().Changed("es-ca-cert") && esCaCert != "" {
+		v.Set("elasticsearch.ca_cert", esCaCert)
+	}
+	if cmd.Flags().Changed("es-insecure") {
+		v.Set("elasticsearch.insecure", esInsecure)
+	}
+	if cmd.Flags().Changed("es-disable-retry") {
+		v.Set("elasticsearch.disable_retry", esDisableRetry)
+	}
+	
+	// Kibana flags
+	if cmd.Flags().Changed("kb-addresses") && kbAddresses != nil {
+		v.Set("kibana.addresses", kbAddresses)
+	}
+	if cmd.Flags().Changed("kb-username") && kbUsername != "" {
+		v.Set("kibana.username", kbUsername)
+	}
+	if cmd.Flags().Changed("kb-password") && kbPassword != "" {
+		v.Set("kibana.password", kbPassword)
+	}
+	if cmd.Flags().Changed("kb-ca-cert") && kbCaCert != "" {
+		v.Set("kibana.ca_cert", kbCaCert)
+	}
+	if cmd.Flags().Changed("kb-insecure") {
+		v.Set("kibana.insecure", kbInsecure)
+	}
+	if cmd.Flags().Changed("format") {
+		v.Set("output.format", outputFormat)
+	}
+
+	// Store the viper instance in the context for later use
+	cmd.SetContext(WithViper(cmd.Context(), v))
+
+	return nil
 }

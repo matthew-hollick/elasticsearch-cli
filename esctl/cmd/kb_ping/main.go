@@ -3,13 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/matthew-hollick/elasticsearch-cli/pkg/client"
 	"github.com/matthew-hollick/elasticsearch-cli/pkg/config"
 	"github.com/matthew-hollick/elasticsearch-cli/pkg/format"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // Command line flags
@@ -58,59 +56,8 @@ func main() {
 
 // initConfig reads in config file and ENV variables if set
 func initConfig(cmd *cobra.Command, args []string) error {
-	v := viper.New()
-
-	// Use config file from the flag if provided
-	if configFile != "" {
-		v.SetConfigFile(configFile)
-	} else {
-		// Use default config locations
-		v.SetConfigName("config")
-		v.SetConfigType("yaml")
-		v.AddConfigPath(".")
-		v.AddConfigPath("$HOME/.config/esctl")
-		v.AddConfigPath("/etc/esctl")
-	}
-
-	// Set defaults
-	v.SetDefault("elasticsearch.addresses", []string{"http://localhost:9200"})
-	v.SetDefault("kibana.addresses", []string{"http://localhost:5601"})
-	v.SetDefault("output.format", "rich")
-
-	// Read config file if it exists
-	if err := v.ReadInConfig(); err == nil {
-		fmt.Printf("Using config file: %s\n", v.ConfigFileUsed())
-	}
-
-	// Enable environment variable binding
-	v.SetEnvPrefix("ESCTL")
-	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	v.AutomaticEnv()
-
-	// Bind flags to viper
-	if cmd.Flags().Changed("kb-addresses") {
-		v.Set("kibana.addresses", addresses)
-	}
-	if cmd.Flags().Changed("kb-username") {
-		v.Set("kibana.username", username)
-	}
-	if cmd.Flags().Changed("kb-password") {
-		v.Set("kibana.password", password)
-	}
-	if cmd.Flags().Changed("kb-ca-cert") {
-		v.Set("kibana.ca_cert", caCert)
-	}
-	if cmd.Flags().Changed("kb-insecure") {
-		v.Set("kibana.insecure", insecure)
-	}
-	if cmd.Flags().Changed("format") {
-		v.Set("output.format", outputFormat)
-	}
-
-	// Store the viper instance in the context for later use
-	cmd.SetContext(config.WithViper(cmd.Context(), v))
-
-	return nil
+	// Use the centralized Kibana config initialization function
+	return config.InitializeKibanaConfig(cmd, configFile, addresses, username, password, caCert, insecure, outputFormat)
 }
 
 func run(cmd *cobra.Command, args []string) error {
