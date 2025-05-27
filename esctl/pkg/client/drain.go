@@ -170,6 +170,49 @@ func (c *Client) StopDrainServer(nodeName string) ([]string, error) {
 	return newExcludeList, nil
 }
 
+// FillServer removes a node from the cluster allocation exclude list (alias for StopDrainServer)
+func (c *Client) FillServer(nodeName string) ([]string, error) {
+	return c.StopDrainServer(nodeName)
+}
+
+// FillAll removes all nodes from the cluster allocation exclude list
+func (c *Client) FillAll() (*ClusterExcludeSettings, error) {
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Prepare the request body to clear all exclusion settings
+	body := map[string]interface{}{
+		"persistent": map[string]interface{}{
+			"cluster.routing.allocation.exclude.name": nil,
+			"cluster.routing.allocation.exclude.ip":   nil,
+			"cluster.routing.allocation.exclude.host": nil,
+		},
+	}
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(body); err != nil {
+		return nil, fmt.Errorf("error encoding request body: %w", err)
+	}
+
+	// Update cluster settings
+	res, err := c.es.Cluster.PutSettings(
+		&buf,
+		c.es.Cluster.PutSettings.WithContext(ctx),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error updating cluster settings: %w", err)
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		return nil, fmt.Errorf("error response: %s", res.String())
+	}
+
+	// Get the updated settings
+	return c.GetClusterExcludeSettings()
+}
+
 // Helper function to extract exclude settings from a settings map
 func extractExcludeSettings(settings map[string]interface{}, excludeSettings *ClusterExcludeSettings) {
 	// Extract IP exclude settings
