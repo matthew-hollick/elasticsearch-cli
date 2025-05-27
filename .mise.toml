@@ -1,0 +1,6 @@
+[tools]
+go = "1.21.0"
+
+[env]
+GO111MODULE = "on"
+CGO_ENABLED = "0"

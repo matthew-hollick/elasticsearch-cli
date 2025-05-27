@@ -1,0 +1,10 @@
+# config.yaml
+elasticsearch:
+  addresses:
+    - https://localhost:9200
+  username: "elastic"
+  password: "changeme"
+  ca_cert: "/path/to/ca.crt"
+
+output:
+  format: "rich"  # rich, plain, json, csv

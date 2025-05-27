@@ -1,0 +1,20 @@
+# Elasticsearch configuration
+elasticsearch:
+  # List of Elasticsearch nodes to connect to
+  addresses:
+    - https://localhost:9200
+  
+  # Authentication (optional)
+  username: "elastic"
+  password: "changeme"
+  
+  # Path to CA certificate (optional, for self-signed certs)
+  # ca_cert: /path/to/ca.crt
+  
+  # Disable retry on failure (default: false)
+  disable_retry: false
+
+# Output configuration
+output:
+  # Output format: rich, plain, json, csv
+  format: "rich"

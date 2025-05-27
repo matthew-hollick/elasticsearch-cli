@@ -1,0 +1,38 @@
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - gosimple
+    - govet
+    - staticcheck
+    - typecheck
+    - unused
+    - ineffassign
+    - goimports
+    - gocritic
+    - bodyclose
+    - gosec
+    - unconvert
+    - goconst
+    - gocognit
+    - errcheck
+    - prealloc
+    - nakedret
+    - dupl
+    - gomnd
+    - misspell
+    - unparam
+    - whitespace
+    - wsl
+    - gofmt
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gomnd
+    - path: pkg/format
+      linters:
+        - gomnd
