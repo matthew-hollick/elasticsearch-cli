@@ -200,7 +200,7 @@ func getHotThreads(cmd *cobra.Command, args []string) error {
 	}
 
 	// Get hot threads
-	hotThreads, err := esClient.GetHotThreads(nodeID)
+	hotThreads, err := esClient.GetNodeHotThreads(nodeID)
 	if err != nil {
 		return fmt.Errorf("failed to get hot threads: %w", err)
 	}

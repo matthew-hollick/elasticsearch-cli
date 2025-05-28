@@ -88,8 +88,8 @@ func (c *Client) GetNodeStats(nodeID string) (map[string]interface{}, error) {
 	return stats, nil
 }
 
-// GetHotThreads returns hot threads information for nodes
-func (c *Client) GetHotThreads(nodeID string) (string, error) {
+// GetNodeHotThreads returns hot threads information for a specific node
+func (c *Client) GetNodeHotThreads(nodeID string) (string, error) {
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

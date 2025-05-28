@@ -116,6 +116,48 @@ func (c *Client) ResetClusterSetting(settingType, settingName string) error {
 	return nil
 }
 
+// SetClusterSetting updates a specific cluster setting
+// If value is nil, the setting will be reset to default
+// Returns the old value, new value, and any error
+func (c *Client) SetClusterSetting(settingName string, value *string) (*string, *string, error) {
+	// Get the current value first
+	currentValue, settingType, err := c.GetSettingValue(settingName, false)
+	if err != nil && value == nil {
+		// If we're trying to reset a setting that doesn't exist, just return
+		return nil, nil, nil
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("error getting current value: %w", err)
+	}
+
+	// Convert current value to string pointer for return
+	var currentValueStr *string
+	if currentValue != nil {
+		str := fmt.Sprintf("%v", currentValue)
+		currentValueStr = &str
+	}
+
+	// If value is nil, reset the setting
+	if value == nil {
+		err = c.ResetClusterSetting(settingType, settingName)
+		if err != nil {
+			return currentValueStr, nil, fmt.Errorf("error resetting setting: %w", err)
+		}
+		return currentValueStr, nil, nil
+	}
+
+	// Otherwise update the setting
+	settings := map[string]interface{}{
+		settingName: *value,
+	}
+
+	err = c.UpdateClusterSettings(settingType, settings)
+	if err != nil {
+		return currentValueStr, value, fmt.Errorf("error updating setting: %w", err)
+	}
+
+	return currentValueStr, value, nil
+}
+
 // GetSettingValue returns the value of a specific setting
 func (c *Client) GetSettingValue(settingName string, includeDefaults bool) (interface{}, string, error) {
 	// Get all settings

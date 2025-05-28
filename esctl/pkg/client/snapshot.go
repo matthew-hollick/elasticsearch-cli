@@ -200,6 +200,42 @@ func (c *Client) CreateSnapshot(repository, name string, indices []string, inclu
 	return &snapshot, nil
 }
 
+// VerifyRepository verifies that a repository is properly configured on all nodes
+func (c *Client) VerifyRepository(name string) (bool, error) {
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Execute request - first parameter is the repository name
+	res, err := c.es.Snapshot.VerifyRepository(
+		name,
+		c.es.Snapshot.VerifyRepository.WithContext(ctx),
+	)
+	if err != nil {
+		return false, fmt.Errorf("error verifying repository: %w", err)
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		return false, fmt.Errorf("error response: %s", res.String())
+	}
+
+	// Parse response
+	var response map[string]interface{}
+	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
+		return false, fmt.Errorf("error parsing response: %w", err)
+	}
+
+	// Check if nodes responded successfully
+	nodesInfo, ok := response["nodes"].(map[string]interface{})
+	if !ok || len(nodesInfo) == 0 {
+		return false, fmt.Errorf("unexpected response format or no nodes responded")
+	}
+
+	// If we got here without errors, the repository is verified
+	return true, nil
+}
+
 // DeleteSnapshot deletes a snapshot
 func (c *Client) DeleteSnapshot(repository, name string) error {
 	// Create context with timeout
