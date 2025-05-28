@@ -56,8 +56,8 @@ func main() {
 	// Create update command
 	var updateCmd = &cobra.Command{
 		Use:              "update",
-		Short:            "Update a cluster setting",
-		Long:             `This command will update the cluster's settings with the provided value.`,
+		Short:            "Create or update a cluster setting",
+		Long:             `This command will create a new setting or update an existing cluster setting with the provided value.`,
 		PersistentPreRunE: initConfig,
 		RunE:             runUpdate,
 	}
@@ -135,9 +135,14 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	// Output results
-	fmt.Printf("Updated setting %s\n", settingToUpdate)
-	fmt.Printf("\tOld value: %s\n", printableValue(existingValue))
-	fmt.Printf("\tNew value: %s\n", printableValue(newValue))
+	if existingValue == nil {
+		fmt.Printf("Created new setting %s\n", settingToUpdate)
+		fmt.Printf("\tValue: %s\n", printableValue(newValue))
+	} else {
+		fmt.Printf("Updated setting %s\n", settingToUpdate)
+		fmt.Printf("\tOld value: %s\n", printableValue(existingValue))
+		fmt.Printf("\tNew value: %s\n", printableValue(newValue))
+	}
 
 	return nil
 }

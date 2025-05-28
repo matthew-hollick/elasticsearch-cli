@@ -122,11 +122,16 @@ func (c *Client) ResetClusterSetting(settingType, settingName string) error {
 func (c *Client) SetClusterSetting(settingName string, value *string) (*string, *string, error) {
 	// Get the current value first
 	currentValue, settingType, err := c.GetSettingValue(settingName, false)
-	if err != nil && value == nil {
+	
+	// Handle case where setting doesn't exist
+	if err != nil {
 		// If we're trying to reset a setting that doesn't exist, just return
-		return nil, nil, nil
-	} else if err != nil {
-		return nil, nil, fmt.Errorf("error getting current value: %w", err)
+		if value == nil {
+			return nil, nil, nil
+		}
+		
+		// For new settings, default to persistent type
+		settingType = "persistent"
 	}
 
 	// Convert current value to string pointer for return
