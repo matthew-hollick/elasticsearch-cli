@@ -11,6 +11,7 @@ import (
 
 // Command line flags
 var (
+	outputStyle string
 	// Config file
 	configFile string
 
@@ -31,12 +32,35 @@ var (
 
 func main() {
 	var rootCmd = &cobra.Command{
-		Use:               "es-hotthreads",
+		Use:               "es_hotthreads",
 		Short:             "Display the current hot threads by node in the cluster",
-		Long:              `Show the current hot threads across a set of nodes within the Elasticsearch cluster.`,
+		Long:              `Identify CPU-intensive threads across Elasticsearch nodes for performance troubleshooting.
+
+This command retrieves and displays information about the most active ("hot") threads in your
+Elasticsearch cluster. It helps identify which threads are consuming excessive CPU resources,
+which is crucial for diagnosing performance issues, thread blocks, or resource contention.
+
+The output includes:
+- Thread name and ID
+- CPU usage percentage
+- Stack traces showing what code is executing
+- Thread state information
+
+You can target specific nodes or examine the entire cluster. This command is invaluable for
+performance troubleshooting, identifying bottlenecks, and resolving thread contention issues.
+
+Example usage:
+  es_hotthreads --es-addresses=https://elasticsearch:9200 --es-username=elastic --es-password=changeme
+  es_hotthreads --nodes=node1,node2
+  es_hotthreads --format=json`,
+		Example:          `es_hotthreads
+es_hotthreads --nodes=node1,node2
+es_hotthreads --format=json`,
 		PersistentPreRunE: initConfig,
 		RunE:              run,
 	}
+	// Disable the auto-generated completion command
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	// Config file flag
 	rootCmd.PersistentFlags().StringVar(&configFile, "config", "", "Config file path (default is ./config.yaml, ~/.config/esctl/config.yaml, or /etc/esctl/config.yaml)")
@@ -53,7 +77,8 @@ func main() {
 	rootCmd.Flags().StringArrayVarP(&nodesToGetHotThreads, "nodes", "n", []string{}, "Elasticsearch nodes to get hot threads for (optional, omitted will include all nodes)")
 
 	// Output flags
-	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (rich, plain, json, csv)")
+	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (fancy, plain, json, csv)")
+rootCmd.PersistentFlags().StringVar(&outputStyle, "style", "", "Table style for fancy output (dark, light, bright, blue, double)")
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)

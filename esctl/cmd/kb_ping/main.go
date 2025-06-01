@@ -12,6 +12,7 @@ import (
 
 // Command line flags
 var (
+	outputStyle string
 	// Config file
 	configFile string
 
@@ -30,10 +31,24 @@ func main() {
 	var rootCmd = &cobra.Command{
 		Use:              "kb_ping",
 		Short:            "Check Kibana status",
-		Long:             `Check if Kibana is up and running and display its status.`,
+		Long:             `Check if Kibana is up and running and display its status.
+
+This command connects to Kibana and verifies that the service is operational. It returns
+key information about the Kibana instance including version, status, and build details.
+Use this command to troubleshoot connectivity issues or verify Kibana deployments.
+
+Example usage:
+  kb_ping --kb-addresses=https://kibana:5601 --kb-username=elastic --kb-password=changeme
+  kb_ping --format=json
+  kb_ping --style=blue`,
+		Example:          `kb_ping
+kb_ping --format=json
+kb_ping --style=blue`,
 		PersistentPreRunE: initConfig,
 		RunE:             run,
 	}
+	// Disable the auto-generated completion command
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	// Config file flag
 	rootCmd.PersistentFlags().StringVar(&configFile, "config", "", "Config file path (default is ./config.yaml, ~/.config/esctl/config.yaml, or /etc/esctl/config.yaml)")
@@ -46,7 +61,8 @@ func main() {
 	rootCmd.PersistentFlags().BoolVar(&insecure, "kb-insecure", false, "Skip TLS certificate validation (insecure)")
 
 	// Output flags
-	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (rich, plain, json, csv)")
+	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (fancy, plain, json, csv)")
+rootCmd.PersistentFlags().StringVar(&outputStyle, "style", "", "Table style for fancy output (dark, light, bright, blue, double)")
 
 	// Execute
 	if err := rootCmd.Execute(); err != nil {
@@ -80,6 +96,6 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	// Output results
-	formatter := format.New(cfg.Output.Format)
+	formatter := format.NewWithStyle(cfg.Output.Format, cfg.Output.Style)
 	return formatter.Write(rows[0], rows[1:])
 }

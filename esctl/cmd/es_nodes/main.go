@@ -13,6 +13,7 @@ import (
 
 // Command line flags
 var (
+	outputStyle string
 	// Config file
 	configFile string
 
@@ -36,10 +37,27 @@ func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "es_nodes",
 		Short: "Get information about Elasticsearch nodes",
-		Long:  `View information about Elasticsearch nodes, including resource usage and hot threads.`,
+		Long:  `View information about Elasticsearch nodes, including resource usage and hot threads.
+
+This command provides detailed information about the nodes in your Elasticsearch cluster.
+By default, it lists all nodes with their key metrics such as CPU usage, heap usage, disk space,
+and node roles. You can filter nodes by ID or get specific information about individual nodes.
+
+Use this command to monitor cluster health, identify resource constraints, or troubleshoot
+performance issues across your Elasticsearch deployment.
+
+Example usage:
+  es_nodes --es-addresses=https://elasticsearch:9200 --es-username=elastic --es-password=changeme
+  es_nodes --node-id=node1 --format=json
+  es_nodes --style=blue`,
+		Example: `es_nodes
+es_nodes --node-id=node1
+es_nodes --format=json`,
 		PersistentPreRunE: initConfig,
 		RunE:  listNodes, // Default action is to list nodes
 	}
+	// Disable the auto-generated completion command
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	// List subcommand (same as root command, but explicit)
 	var listCmd = &cobra.Command{
@@ -77,7 +95,8 @@ func main() {
 	rootCmd.PersistentFlags().BoolVar(&disableRetry, "es-disable-retry", false, "Disable retry on Elasticsearch connection failure")
 
 	// Output flags
-	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (rich, plain, json, csv)")
+	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (fancy, plain, json, csv)")
+rootCmd.PersistentFlags().StringVar(&outputStyle, "style", "", "Table style for fancy output (dark, light, bright, blue, double)")
 
 	// Stats command flags
 	statsCmd.Flags().StringVarP(&nodeID, "id", "i", "", "Node ID to get stats for (required)")
@@ -127,7 +146,7 @@ func listNodes(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create formatter
-	formatter := format.New(cfg.Output.Format)
+	formatter := format.NewWithStyle(cfg.Output.Format, cfg.Output.Style)
 
 	// Prepare table data
 	header := []string{"ID", "Name", "IP", "Role", "CPU", "Load (1m/5m/15m)", "RAM %", "Heap %", "Disk Used %", "Disk Avail", "Uptime"}

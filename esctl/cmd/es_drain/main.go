@@ -13,6 +13,7 @@ import (
 
 // Command line flags
 var (
+	outputStyle string
 	// Config file
 	configFile string
 
@@ -37,9 +38,33 @@ func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "es_drain",
 		Short: "Drain a server or see what servers are draining",
-		Long:  `Use the subcommands to drain a server or to see what servers are currently draining.`,
+		Long:  `Safely remove an Elasticsearch node from service by relocating its shards to other nodes.
+
+The drain command is essential for cluster maintenance operations. It allows you to safely
+take a node offline by moving all its data to other nodes in the cluster. This is accomplished
+by setting allocation rules that prevent new shards from being allocated to the target node
+while gradually relocating existing shards elsewhere.
+
+Use cases include:
+- Performing maintenance on a specific node
+- Decommissioning hardware
+- Upgrading node configurations
+- Rebalancing cluster workloads
+
+The command offers options to start a drain operation on a specific node or to check the
+status of ongoing drain operations. You can also stop a drain operation if needed.
+
+Example usage:
+  es_drain start --node=node-1
+  es_drain status
+  es_drain stop --node=node-1`,
+		Example: `es_drain start --node=node-1
+es_drain status
+es_drain stop --node=node-1`,
 		PersistentPreRunE: initConfig,
 	}
+	// Disable the auto-generated completion command
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	// Server subcommand
 	var serverCmd = &cobra.Command{
@@ -69,7 +94,8 @@ func main() {
 	rootCmd.PersistentFlags().BoolVar(&disableRetry, "es-disable-retry", false, "Disable retry on Elasticsearch connection failure")
 
 	// Output flags
-	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (rich, plain, json, csv)")
+	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (fancy, plain, json, csv)")
+rootCmd.PersistentFlags().StringVar(&outputStyle, "style", "", "Table style for fancy output (dark, light, bright, blue, double)")
 
 	// Server drain flags
 	serverCmd.Flags().StringVarP(&nodeName, "name", "n", "", "Elasticsearch node name to drain (required)")
@@ -153,7 +179,7 @@ func runDrainStatus(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create formatter
-	formatter := format.New(cfg.Output.Format)
+	formatter := format.NewWithStyle(cfg.Output.Format, cfg.Output.Style)
 
 	// Prepare table data for excluded nodes by name
 	if len(excludeSettings.ExcludeName) > 0 {

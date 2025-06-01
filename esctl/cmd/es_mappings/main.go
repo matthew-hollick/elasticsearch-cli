@@ -11,6 +11,7 @@ import (
 
 // Command line flags
 var (
+	outputStyle string
 	// Config file
 	configFile string
 
@@ -31,12 +32,34 @@ var (
 
 func main() {
 	var rootCmd = &cobra.Command{
-		Use:              "es-mappings",
+		Use:              "es_mappings",
 		Short:            "Display the mappings of the specified index",
-		Long:             `Show the mappings of the specified index within the Elasticsearch cluster.`,
+		Long:             `View the field mappings and data types for Elasticsearch indices.
+
+This command displays the complete mapping configuration for a specified index, showing how
+Elasticsearch interprets and stores each field in your documents. Mappings define field types,
+analyzer settings, and other metadata that control how fields are indexed and searched.
+
+The output includes:
+- Field names and their data types (text, keyword, date, numeric, etc.)
+- Field properties (analyzer settings, doc_values, store settings)
+- Multi-field configurations
+- Dynamic mapping rules
+
+Understanding mappings is crucial for optimizing search performance, controlling indexing behavior,
+and ensuring your data is correctly interpreted by Elasticsearch.
+
+Example usage:
+  es_mappings --index=my-index
+  es_mappings --index=my-index --format=json
+  es_mappings --index=my-index --style=blue`,
+		Example:          `es_mappings --index=my-index
+es_mappings --index=my-index --format=json`,
 		PersistentPreRunE: initConfig,
 		RunE:             run,
 	}
+	// Disable the auto-generated completion command
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	// Config file flag
 	rootCmd.PersistentFlags().StringVar(&configFile, "config", "", "Config file path (default is ./config.yaml, ~/.config/esctl/config.yaml, or /etc/esctl/config.yaml)")
@@ -54,7 +77,8 @@ func main() {
 	rootCmd.MarkFlagRequired("index")
 
 	// Output flags
-	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (rich, plain, json, csv)")
+	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (fancy, plain, json, csv)")
+rootCmd.PersistentFlags().StringVar(&outputStyle, "style", "", "Table style for fancy output (dark, light, bright, blue, double)")
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)

@@ -12,6 +12,7 @@ import (
 
 // Command line flags
 var (
+	outputStyle string
 	// Config file
 	configFile string
 
@@ -24,9 +25,9 @@ var (
 	disableRetry bool
 
 	// Allocation options
-	status     string
-	indexName  string
-	shardID    string
+	status      string
+	indexName   string
+	shardID     string
 	primaryFlag bool
 
 	// Output
@@ -36,12 +37,38 @@ var (
 func main() {
 	// Root command
 	var rootCmd = &cobra.Command{
-		Use:   "es_allocation",
-		Short: "Control shard allocation in Elasticsearch",
-		Long:  `View and modify shard allocation settings and get detailed allocation explanations.`,
+		Use:               "es_allocation",
+		Short:             "Control shard allocation in Elasticsearch",
+		Long:              `View and modify shard allocation settings and get detailed allocation explanations.
+
+This command gives you precise control over how Elasticsearch allocates shards across your cluster.
+It allows you to view current allocation settings, enable/disable allocation, and get detailed
+explanations for why specific shards are allocated to particular nodes or remain unallocated.
+
+Key capabilities include:
+- Viewing cluster-wide allocation status
+- Enabling or disabling allocation (useful during maintenance)
+- Getting allocation explanations for specific shards
+- Understanding allocation decisions for troubleshooting
+
+Proper shard allocation is critical for cluster performance, stability, and data availability.
+Use this command when performing maintenance, troubleshooting allocation issues, or optimizing
+cluster resource usage.
+
+Example usage:
+  es_allocation status
+  es_allocation enable
+  es_allocation disable
+  es_allocation explain --index=my-index --shard=0 --primary`,
+		Example:          `es_allocation status
+es_allocation enable
+es_allocation disable
+es_allocation explain --index=my-index --shard=0 --primary`,
 		PersistentPreRunE: initConfig,
-		RunE:  getStatus, // Default action is to get status
+		RunE:              getStatus, // Default action is to get status
 	}
+	// Disable the auto-generated completion command
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	// Get status subcommand (same as root command, but explicit)
 	var getStatusCmd = &cobra.Command{
@@ -79,7 +106,8 @@ func main() {
 	rootCmd.PersistentFlags().BoolVar(&disableRetry, "es-disable-retry", false, "Disable retry on Elasticsearch connection failure")
 
 	// Output flags
-	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (rich, plain, json, csv)")
+	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (fancy, plain, json, csv)")
+rootCmd.PersistentFlags().StringVar(&outputStyle, "style", "", "Table style for fancy output (dark, light, bright, blue, double)")
 
 	// Set status command flags
 	setStatusCmd.Flags().StringVarP(&status, "status", "s", "", "Allocation status to set (required, one of: all, primaries, new_primaries, none)")

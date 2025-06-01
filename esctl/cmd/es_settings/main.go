@@ -13,6 +13,7 @@ import (
 
 // Command line flags
 var (
+	outputStyle string
 	// Config file
 	configFile string
 
@@ -40,10 +41,37 @@ func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "es_settings",
 		Short: "Manage Elasticsearch cluster settings",
-		Long:  `View and modify Elasticsearch cluster settings, including transient and persistent settings.`,
+		Long:  `View and modify Elasticsearch cluster settings, including transient and persistent settings.
+
+This command provides comprehensive control over Elasticsearch's cluster-wide configuration settings.
+It allows you to view all current settings or filter by specific setting names, and supports both
+transient (temporary until restart) and persistent (survives restarts) setting types.
+
+Key capabilities include:
+- Listing all cluster settings with optional filtering
+- Viewing settings in flat or hierarchical format
+- Including default values in the output
+- Updating settings with new values
+- Specifying setting persistence type
+
+Cluster settings control critical aspects of Elasticsearch behavior including shard allocation,
+threading, memory usage, discovery, and more. This command helps you inspect and tune these
+settings for optimal performance and stability.
+
+Example usage:
+  es_settings
+  es_settings --name=cluster.routing.allocation.enable
+  es_settings --include-defaults
+  es_settings update --name=cluster.routing.allocation.enable --value=none --type=transient`,
+		Example: `es_settings
+es_settings --name=cluster.routing.allocation.enable
+es_settings --include-defaults --flat
+es_settings update --name=cluster.routing.allocation.enable --value=none --type=transient`,
 		PersistentPreRunE: initConfig,
 		RunE:  listSettings, // Default action is to list settings
 	}
+	// Disable the auto-generated completion command
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	// List settings subcommand (same as root command, but explicit)
 	var listCmd = &cobra.Command{
@@ -89,7 +117,8 @@ func main() {
 	rootCmd.PersistentFlags().BoolVar(&disableRetry, "es-disable-retry", false, "Disable retry on Elasticsearch connection failure")
 
 	// Output flags
-	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (rich, plain, json, csv)")
+	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (fancy, plain, json, csv)")
+rootCmd.PersistentFlags().StringVar(&outputStyle, "style", "", "Table style for fancy output (dark, light, bright, blue, double)")
 
 	// List command flags
 	rootCmd.Flags().BoolVarP(&includeDefaults, "defaults", "d", false, "Include default settings")

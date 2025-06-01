@@ -13,6 +13,7 @@ import (
 
 // Command line flags
 var (
+	outputStyle string
 	// Config file
 	configFile string
 
@@ -30,12 +31,36 @@ var (
 
 func main() {
 	var rootCmd = &cobra.Command{
-		Use:               "es-heap",
+		Use:               "es_heap",
 		Short:             "Display node heap statistics",
-		Long:              `Show node heap stats and settings for the Elasticsearch cluster.`,
+		Long:              `Display detailed Java heap memory usage statistics for all Elasticsearch nodes.
+
+This command provides critical memory usage metrics for each node in your Elasticsearch cluster.
+It shows current heap usage, maximum heap size, garbage collection statistics, and memory pressure
+indicators. Monitoring heap usage is essential for preventing out-of-memory errors and optimizing
+cluster performance.
+
+The output includes:
+- Current heap used (absolute and percentage)
+- Maximum heap size configured
+- Garbage collection frequency and duration
+- Memory pressure indicators
+
+Use this command to identify memory-related performance issues, nodes approaching memory limits,
+or to verify heap settings across your cluster.
+
+Example usage:
+  es_heap --es-addresses=https://elasticsearch:9200 --es-username=elastic --es-password=changeme
+  es_heap --format=json
+  es_heap --style=blue`,
+		Example:          `es_heap
+es_heap --format=json
+es_heap --style=blue`,
 		PersistentPreRunE: initConfig,
 		RunE:              run,
 	}
+	// Disable the auto-generated completion command
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	// Config file flag
 	rootCmd.PersistentFlags().StringVar(&configFile, "config", "", "Config file path (default is ./config.yaml, ~/.config/esctl/config.yaml, or /etc/esctl/config.yaml)")
@@ -49,7 +74,8 @@ func main() {
 	rootCmd.PersistentFlags().BoolVar(&disableRetry, "es-disable-retry", false, "Disable retry on Elasticsearch connection failure")
 
 	// Output flags
-	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (rich, plain, json, csv)")
+	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (fancy, plain, json, csv)")
+rootCmd.PersistentFlags().StringVar(&outputStyle, "style", "", "Table style for fancy output (dark, light, bright, blue, double)")
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
@@ -104,6 +130,6 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create formatter and output
-	formatter := format.New(cfg.Output.Format)
+	formatter := format.NewWithStyle(cfg.Output.Format, cfg.Output.Style)
 	return formatter.Write(header, rows)
 }

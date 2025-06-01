@@ -12,6 +12,7 @@ import (
 
 // Command line flags
 var (
+	outputStyle string
 	// Config file
 	configFile string
 
@@ -34,10 +35,34 @@ var (
 
 func main() {
 	var rootCmd = &cobra.Command{
-		Use:   "es-setting",
+		Use:   "es_setting",
 		Short: "Interact with cluster settings",
-		Long:  `Use the subcommands to view or update cluster settings.`,
+		Long:  `View and modify dynamic cluster-wide settings in Elasticsearch.
+
+This command allows you to inspect and modify the dynamic settings that control Elasticsearch's
+behavior at the cluster level. These settings affect various aspects of cluster operation including
+shard allocation, discovery, routing, and more.
+
+Key capabilities include:
+- Viewing current cluster settings
+- Updating specific settings with new values
+- Removing custom settings to restore defaults
+- Applying persistent or transient changes
+
+Cluster settings provide powerful controls for tuning Elasticsearch's behavior without restart.
+Use this command for operational adjustments, performance tuning, or troubleshooting.
+
+Example usage:
+  es_setting get
+  es_setting update --setting=cluster.routing.allocation.enable --value=none
+  es_setting update --setting=cluster.routing.allocation.enable --value=all
+  es_setting remove --setting=cluster.routing.allocation.enable`,
+		Example: `es_setting get
+es_setting update --setting=cluster.routing.allocation.enable --value=none
+es_setting remove --setting=cluster.routing.allocation.enable`,
 	}
+	// Disable the auto-generated completion command
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	// Config file flag
 	rootCmd.PersistentFlags().StringVar(&configFile, "config", "", "Config file path (default is ./config.yaml, ~/.config/esctl/config.yaml, or /etc/esctl/config.yaml)")
@@ -51,7 +76,8 @@ func main() {
 	rootCmd.PersistentFlags().BoolVar(&disableRetry, "es-disable-retry", false, "Disable retry on Elasticsearch connection failure")
 
 	// Output flags
-	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (rich, plain, json, csv)")
+	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (fancy, plain, json, csv)")
+rootCmd.PersistentFlags().StringVar(&outputStyle, "style", "", "Table style for fancy output (dark, light, bright, blue, double)")
 
 	// Create update command
 	var updateCmd = &cobra.Command{

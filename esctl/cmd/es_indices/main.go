@@ -14,6 +14,7 @@ import (
 
 // Command line flags
 var (
+	outputStyle string
 	// Config file
 	configFile string
 
@@ -40,10 +41,33 @@ func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "es_indices",
 		Short: "Manage Elasticsearch indices",
-		Long:  `View and manage Elasticsearch indices, including listing, deleting, opening, closing, and updating settings.`,
+		Long:  `View and manage Elasticsearch indices, including listing, deleting, opening, closing, and updating settings.
+
+This command provides comprehensive control over Elasticsearch indices. By default, it lists
+all indices with their key metrics such as document count, size, status, and health. You can
+filter indices using patterns to focus on specific index groups.
+
+The command supports multiple operations through subcommands:
+- list: Display all indices matching a pattern (default action)
+- delete: Remove indices from the cluster
+- open/close: Control index state to optimize resource usage
+- settings: View or update index configuration
+
+Use this command for index maintenance, monitoring storage usage, or applying configuration
+changes across your indices.
+
+Example usage:
+  es_indices --es-addresses=https://elasticsearch:9200 --es-username=elastic --es-password=changeme
+  es_indices --index-pattern="logstash-*" --format=json
+  es_indices delete --index-name="old-index" --force`,
+		Example: `es_indices
+es_indices --index-pattern="logstash-*"
+es_indices delete --index-name="old-index" --force`,
 		PersistentPreRunE: initConfig,
 		RunE:  listIndices, // Default action is to list indices
 	}
+	// Disable the auto-generated completion command
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	// List subcommand (same as root command, but explicit)
 	var listCmd = &cobra.Command{
@@ -97,7 +121,8 @@ func main() {
 	rootCmd.PersistentFlags().BoolVar(&disableRetry, "es-disable-retry", false, "Disable retry on Elasticsearch connection failure")
 
 	// Output flags
-	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (rich, plain, json, csv)")
+	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (fancy, plain, json, csv)")
+rootCmd.PersistentFlags().StringVar(&outputStyle, "style", "", "Table style for fancy output (dark, light, bright, blue, double)")
 
 	// List command flags
 	rootCmd.Flags().StringVarP(&indexPattern, "pattern", "p", "", "Index pattern to filter indices (e.g., 'logs-*')")
@@ -162,7 +187,7 @@ func listIndices(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create formatter
-	formatter := format.New(cfg.Output.Format)
+	formatter := format.NewWithStyle(cfg.Output.Format, cfg.Output.Style)
 
 	// Prepare table data
 	header := []string{"Index", "Status", "Health", "Docs Count", "Docs Deleted", "Store Size", "Primary Store Size"}

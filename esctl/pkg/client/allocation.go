@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/elastic/go-elasticsearch/v8/esapi"
+	"github.com/elastic/go-elasticsearch/v9/esapi"
 )
 
 // AllocationStatus represents the current allocation status

@@ -14,6 +14,7 @@ import (
 
 // Command line flags
 var (
+	outputStyle string
 	// Config file
 	configFile string
 
@@ -37,11 +38,37 @@ var (
 func main() {
 	// Create root command
 	var rootCmd = &cobra.Command{
-		Use:               "es-repository",
+		Use:               "es_repository",
 		Short:             "Interact with snapshot repositories",
-		Long:              `Use the list, verify, register, and remove subcommands to manage snapshot repositories.`,
+		Long:              `Manage Elasticsearch snapshot repositories for backup and recovery operations.
+
+This command provides comprehensive tools for managing snapshot repositories, which are storage
+locations where Elasticsearch stores backup data. You can create, list, verify, and remove
+repositories of various types (fs, s3, azure, gcs, etc.).
+
+Key capabilities include:
+- Listing all configured repositories
+- Verifying repository connectivity and access
+- Registering new repositories with specific settings
+- Removing existing repositories
+
+Snapshot repositories are essential for implementing backup strategies, disaster recovery plans,
+and data migration workflows. This command helps you manage the storage infrastructure needed
+for these critical operations.
+
+Example usage:
+  es_repository list
+  es_repository verify --name=my_backups
+  es_repository register --name=my_backups --type=fs --settings=location=/backups
+  es_repository remove --name=old_backups`,
+		Example:          `es_repository list
+es_repository verify --name=my_backups
+es_repository register --name=my_backups --type=fs --settings=location=/backups
+es_repository remove --name=old_backups`,
 		PersistentPreRunE: initConfig,
 	}
+	// Disable the auto-generated completion command
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	// Config file flag
 	rootCmd.PersistentFlags().StringVar(&configFile, "config", "", "Config file path (default is ./config.yaml, ~/.config/esctl/config.yaml, or /etc/esctl/config.yaml)")
@@ -55,7 +82,8 @@ func main() {
 	rootCmd.PersistentFlags().BoolVar(&disableRetry, "es-disable-retry", false, "Disable retry on Elasticsearch connection failure")
 
 	// Output flags
-	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (rich, plain, json, csv)")
+	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (fancy, plain, json, csv)")
+rootCmd.PersistentFlags().StringVar(&outputStyle, "style", "", "Table style for fancy output (dark, light, bright, blue, double)")
 
 	// Create list command
 	var listCmd = &cobra.Command{
@@ -154,7 +182,7 @@ func runList(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create formatter and output
-	formatter := format.New(cfg.Output.Format)
+	formatter := format.NewWithStyle(cfg.Output.Format, cfg.Output.Style)
 	return formatter.Write(header, rows)
 }
 

@@ -12,6 +12,7 @@ import (
 
 // Command line flags
 var (
+	outputStyle string
 	// Config file
 	configFile string
 
@@ -46,15 +47,55 @@ func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "es_snapshot",
 		Short: "Manage Elasticsearch snapshots",
-		Long:  `Create, restore, and manage Elasticsearch snapshots and repositories.`,
+		Long:  `Create, restore, and manage Elasticsearch snapshots and repositories.
+
+This command provides comprehensive control over Elasticsearch's backup and restore functionality.
+It allows you to manage snapshot repositories (storage locations) and the snapshots themselves.
+
+Key capabilities include:
+- Creating and managing snapshot repositories (S3, shared filesystem, etc.)
+- Taking full or partial cluster backups
+- Restoring indices from snapshots
+- Monitoring snapshot status
+- Listing and deleting existing snapshots
+
+Snapshots are critical for disaster recovery, data migration, and archiving. This command
+provides a streamlined interface for all snapshot-related operations.
+
+Example usage:
+  es_snapshot repo list
+  es_snapshot repo create --repo-name=my_backups --repo-type=fs --repo-settings='{"location":"/backups"}'  
+  es_snapshot create --repo-name=my_backups --snapshot-name=daily_backup
+  es_snapshot restore --repo-name=my_backups --snapshot-name=daily_backup --indices=index1,index2`,
+		Example: `es_snapshot repo list
+es_snapshot create --repo-name=my_backups --snapshot-name=daily_backup
+es_snapshot restore --repo-name=my_backups --snapshot-name=daily_backup`,
 		PersistentPreRunE: initConfig,
 	}
+	// Disable the auto-generated completion command
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	// Repository commands
 	var repoCmd = &cobra.Command{
 		Use:   "repo",
 		Short: "Manage snapshot repositories",
-		Long:  `Create, list, and delete snapshot repositories.`,
+		Long:  `Create, list, and delete snapshot repositories.
+
+Snapshot repositories are storage locations where Elasticsearch stores backup data. This
+command allows you to manage these repositories, including creating new ones with specific
+storage types (fs, s3, azure, gcs, etc.), listing existing repositories, and removing them.
+
+When creating repositories, you'll need to specify the repository type and appropriate settings
+for that type. For example, a filesystem repository requires a location path, while an S3
+repository requires bucket information.
+
+Example usage:
+  es_snapshot repo list
+  es_snapshot repo create --repo-name=my_backups --repo-type=fs --repo-settings='{"location":"/backups"}'
+  es_snapshot repo delete --repo-name=old_backups`,
+		Example: `es_snapshot repo list
+es_snapshot repo create --repo-name=my_backups --repo-type=fs --repo-settings='{"location":"/backups"}'
+es_snapshot repo delete --repo-name=old_backups`,
 	}
 
 	var listRepoCmd = &cobra.Command{
@@ -125,7 +166,8 @@ func main() {
 	rootCmd.PersistentFlags().BoolVar(&disableRetry, "es-disable-retry", false, "Disable retry on Elasticsearch connection failure")
 
 	// Output flags
-	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (rich, plain, json, csv)")
+	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (fancy, plain, json, csv)")
+rootCmd.PersistentFlags().StringVar(&outputStyle, "style", "", "Table style for fancy output (dark, light, bright, blue, double)")
 
 	// Repository command flags
 	createRepoCmd.Flags().StringVarP(&repoName, "name", "n", "", "Repository name (required)")

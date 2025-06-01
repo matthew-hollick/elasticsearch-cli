@@ -13,6 +13,7 @@ import (
 
 // Command line flags
 var (
+	outputStyle string
 	// Config file
 	configFile string
 
@@ -36,9 +37,31 @@ func main() {
 	var rootCmd = &cobra.Command{
 		Use:   "es_fill",
 		Short: "Fill servers with data, removing shard allocation exclusion rules",
-		Long:  `Use the subcommands to remove shard allocation exclusion rules from one server or all servers.`,
+		Long:  `Return a node to full service by removing shard allocation exclusion rules.
+
+The fill command is the counterpart to the drain command. It allows you to bring a node back
+into full service by removing allocation exclusion rules that were previously set. Once these
+rules are removed, Elasticsearch will begin allocating shards to the node according to the
+cluster's balancing algorithm.
+
+Use cases include:
+- Returning a node to service after maintenance
+- Adding a node back to the allocation pool
+- Restoring normal cluster operations
+- Completing a rolling upgrade process
+
+You can choose to fill a specific node by name or remove all allocation exclusions across
+the cluster at once.
+
+Example usage:
+  es_fill node --node=node-1
+  es_fill all`,
+		Example: `es_fill node --node=node-1
+es_fill all`,
 		PersistentPreRunE: initConfig,
 	}
+	// Disable the auto-generated completion command
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	// Server subcommand
 	var serverCmd = &cobra.Command{
@@ -68,7 +91,8 @@ func main() {
 	rootCmd.PersistentFlags().BoolVar(&disableRetry, "es-disable-retry", false, "Disable retry on Elasticsearch connection failure")
 
 	// Output flags
-	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (rich, plain, json, csv)")
+	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (fancy, plain, json, csv)")
+rootCmd.PersistentFlags().StringVar(&outputStyle, "style", "", "Table style for fancy output (dark, light, bright, blue, double)")
 
 	// Server fill flags
 	serverCmd.Flags().StringVarP(&nodeName, "name", "n", "", "Elasticsearch node name to fill (required)")
@@ -144,7 +168,7 @@ func runFillAll(cmd *cobra.Command, args []string) error {
 	fmt.Println("All allocation exclusion rules have been removed")
 
 	// Create formatter
-	formatter := format.New(cfg.Output.Format)
+	formatter := format.NewWithStyle(cfg.Output.Format, cfg.Output.Style)
 
 	// Check if there are any remaining exclusions (should be none)
 	hasExclusions := len(excludeSettings.ExcludeName) > 0 || 

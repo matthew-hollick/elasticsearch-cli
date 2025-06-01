@@ -13,6 +13,7 @@ import (
 
 // Command line flags
 var (
+	outputStyle string
 	// Config file
 	configFile string
 
@@ -33,12 +34,36 @@ var (
 
 func main() {
 	var rootCmd = &cobra.Command{
-		Use:               "es-nodeallocations",
+		Use:               "es_nodeallocations",
 		Short:             "Display node disk allocations",
-		Long:              `Show disk allocation information for all nodes in the Elasticsearch cluster.`,
+		Long:              `Monitor disk usage and shard allocation metrics across all nodes in the cluster.
+
+This command provides a detailed view of how disk space is being utilized across your Elasticsearch
+cluster. It shows disk usage statistics, allocation thresholds, and shard distribution for each node,
+helping you identify potential disk space issues before they become critical.
+
+The output includes:
+- Total and available disk space per node
+- Current disk usage percentage
+- Low and high watermark thresholds
+- Number of shards allocated to each node
+- Disk-based allocation decisions
+
+Use this command to proactively monitor disk space, plan capacity, identify imbalances in shard
+distribution, and troubleshoot allocation issues related to disk space constraints.
+
+Example usage:
+  es_nodeallocations --es-addresses=https://elasticsearch:9200 --es-username=elastic --es-password=changeme
+  es_nodeallocations --short
+  es_nodeallocations --format=json`,
+		Example:          `es_nodeallocations
+es_nodeallocations --short
+es_nodeallocations --format=json`,
 		PersistentPreRunE: initConfig,
 		RunE:              run,
 	}
+	// Disable the auto-generated completion command
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	// Config file flag
 	rootCmd.PersistentFlags().StringVar(&configFile, "config", "", "Config file path (default is ./config.yaml, ~/.config/esctl/config.yaml, or /etc/esctl/config.yaml)")
@@ -55,7 +80,8 @@ func main() {
 	rootCmd.Flags().BoolVarP(&shortOutput, "short", "s", false, "Shorter, more compact table output")
 
 	// Output flags
-	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (rich, plain, json, csv)")
+	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (fancy, plain, json, csv)")
+rootCmd.PersistentFlags().StringVar(&outputStyle, "style", "", "Table style for fancy output (dark, light, bright, blue, double)")
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
@@ -135,6 +161,6 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create formatter and output
-	formatter := format.New(cfg.Output.Format)
+	formatter := format.NewWithStyle(cfg.Output.Format, cfg.Output.Style)
 	return formatter.Write(header, rows)
 }

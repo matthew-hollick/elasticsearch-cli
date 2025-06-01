@@ -45,7 +45,8 @@ type KibanaConfig struct {
 
 // OutputConfig holds output formatting configuration
 type OutputConfig struct {
-	Format string `yaml:"format" mapstructure:"format"` // rich, plain, json, csv
+	Format string `yaml:"format" mapstructure:"format"` // plain, json, csv
+	Style  string `yaml:"style" mapstructure:"style"`  // Style for fancy output format
 }
 
 // Context key for viper instance
@@ -87,7 +88,8 @@ func Load(ctx ...context.Context) (*Config, error) {
 		// Set defaults
 		v.SetDefault("elasticsearch.addresses", []string{"http://localhost:9200"})
 		v.SetDefault("kibana.addresses", []string{"http://localhost:5601"})
-		v.SetDefault("output.format", "rich")
+		v.SetDefault("output.format", "fancy")
+		v.SetDefault("output.style", "dark") // Default style for fancy output
 
 		// Read config file if it exists
 		if err := v.ReadInConfig(); err != nil {
@@ -161,7 +163,7 @@ func initializeConfigInternal(cmd *cobra.Command, configFile string,
 	// Set defaults
 	v.SetDefault("elasticsearch.addresses", []string{"http://localhost:9200"})
 	v.SetDefault("kibana.addresses", []string{"http://localhost:5601"})
-	v.SetDefault("output.format", "rich")
+	v.SetDefault("output.format", "plain")
 
 	// Read config file if it exists
 	if err := v.ReadInConfig(); err == nil {

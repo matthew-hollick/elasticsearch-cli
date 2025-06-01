@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/elastic/go-elasticsearch/v8/esapi"
+	"github.com/elastic/go-elasticsearch/v9/esapi"
 )
 
 // NodeInfo represents information about a single node
@@ -94,7 +94,7 @@ func (c *Client) GetNodeHotThreads(nodeID string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Prepare options
+	// Prepare options for v9 API
 	opts := []func(*esapi.NodesHotThreadsRequest){}
 	
 	// Add node ID if specified

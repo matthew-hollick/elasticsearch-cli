@@ -13,6 +13,7 @@ import (
 
 // Command line flags
 var (
+	outputStyle string
 	// Config file
 	configFile string
 
@@ -38,10 +39,32 @@ func main() {
 	var rootCmd = &cobra.Command{
 		Use:              "es_shards",
 		Short:            "Display Elasticsearch shard allocation",
-		Long:             `Display Elasticsearch shard allocation by node, including unallocated shards and their reasons.`,
+		Long:             `Display Elasticsearch shard allocation by node, including unallocated shards and their reasons.
+
+This command provides a detailed view of how shards are distributed across your Elasticsearch cluster.
+It shows primary and replica shards, their states, and which nodes they're allocated to. This is crucial
+for diagnosing cluster imbalances, allocation issues, and understanding data distribution.
+
+You can filter the output by node, index, shard state, or limit to primary shards only. The command
+helps identify:
+- Unallocated shards and why they're not assigned
+- Imbalanced shard distribution across nodes
+- Indices with allocation problems
+- Overall cluster shard health
+
+Example usage:
+  es_shards --es-addresses=https://elasticsearch:9200 --es-username=elastic --es-password=changeme
+  es_shards --nodes=node1,node2 --format=json
+  es_shards --indices=logstash-* --primary-only --style=blue`,
+		Example:          `es_shards
+es_shards --nodes=node1,node2
+es_shards --indices=logstash-* --primary-only
+es_shards --states=UNASSIGNED`,
 		PersistentPreRunE: initConfig,
 		RunE:             run,
 	}
+	// Disable the auto-generated completion command
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	// Config file flag
 	rootCmd.PersistentFlags().StringVar(&configFile, "config", "", "Config file path (default is ./config.yaml, ~/.config/esctl/config.yaml, or /etc/esctl/config.yaml)")
@@ -61,7 +84,8 @@ func main() {
 	rootCmd.PersistentFlags().BoolVarP(&primaryOnly, "primary", "p", false, "Show only primary shards")
 
 	// Output flags
-	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (rich, plain, json, csv)")
+	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "", "Output format (fancy, plain, json, csv)")
+rootCmd.PersistentFlags().StringVar(&outputStyle, "style", "", "Table style for fancy output (dark, light, bright, blue, double)")
 
 	// Execute
 	if err := rootCmd.Execute(); err != nil {
@@ -95,7 +119,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create formatter
-	formatter := format.New(cfg.Output.Format)
+	formatter := format.NewWithStyle(cfg.Output.Format, cfg.Output.Style)
 
 	// Print allocated shards by node
 	if len(shardsByNode) > 0 {
