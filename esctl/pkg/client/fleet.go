@@ -36,11 +36,11 @@ type AgentPolicy struct {
 
 // AgentPolicyResponse represents the response from the Fleet API for agent policies
 type AgentPolicyResponse struct {
-	Item  AgentPolicy   `json:"item,omitempty"`
-	Items []AgentPolicy `json:"items,omitempty"`
-	Page  int           `json:"page,omitempty"`
-	PerPage int         `json:"perPage,omitempty"`
-	Total int           `json:"total,omitempty"`
+	Item    AgentPolicy   `json:"item,omitempty"`
+	Items   []AgentPolicy `json:"items,omitempty"`
+	Page    int           `json:"page,omitempty"`
+	PerPage int           `json:"perPage,omitempty"`
+	Total   int           `json:"total,omitempty"`
 }
 
 // EnrollmentToken represents a Fleet enrollment token
@@ -80,38 +80,38 @@ type PackagePolicyPackage struct {
 
 // PackagePolicyResponse represents the response from the Fleet API for package policies
 type PackagePolicyResponse struct {
-	Item  PackagePolicy   `json:"item,omitempty"`
-	Items []PackagePolicy `json:"items,omitempty"`
-	Page  int             `json:"page,omitempty"`
-	PerPage int           `json:"perPage,omitempty"`
-	Total int             `json:"total,omitempty"`
+	Item    PackagePolicy   `json:"item,omitempty"`
+	Items   []PackagePolicy `json:"items,omitempty"`
+	Page    int             `json:"page,omitempty"`
+	PerPage int             `json:"perPage,omitempty"`
+	Total   int             `json:"total,omitempty"`
 }
 
 // Agent represents a Fleet agent
 type Agent struct {
-	ID                 string                 `json:"id"`
-	PolicyID           string                 `json:"policy_id"`
-	Type               string                 `json:"type"`
-	Active             bool                   `json:"active"`
-	Status             string                 `json:"status"`
-	LastCheckin        string                 `json:"last_checkin"`
-	EnrolledAt         string                 `json:"enrolled_at"`
-	UnenrolledAt       string                 `json:"unenrolled_at,omitempty"`
-	UpgradedAt         string                 `json:"upgraded_at,omitempty"`
-	UpgradeStatus      string                 `json:"upgrade_status,omitempty"`
-	LocalMetadata      map[string]interface{} `json:"local_metadata,omitempty"`
-	UserMetadata       map[string]interface{} `json:"user_metadata,omitempty"`
-	Tags               []string               `json:"tags,omitempty"`
-	AccessAPIKeyID     string                 `json:"access_api_key_id,omitempty"`
+	ID             string                 `json:"id"`
+	PolicyID       string                 `json:"policy_id"`
+	Type           string                 `json:"type"`
+	Active         bool                   `json:"active"`
+	Status         string                 `json:"status"`
+	LastCheckin    string                 `json:"last_checkin"`
+	EnrolledAt     string                 `json:"enrolled_at"`
+	UnenrolledAt   string                 `json:"unenrolled_at,omitempty"`
+	UpgradedAt     string                 `json:"upgraded_at,omitempty"`
+	UpgradeStatus  string                 `json:"upgrade_status,omitempty"`
+	LocalMetadata  map[string]interface{} `json:"local_metadata,omitempty"`
+	UserMetadata   map[string]interface{} `json:"user_metadata,omitempty"`
+	Tags           []string               `json:"tags,omitempty"`
+	AccessAPIKeyID string                 `json:"access_api_key_id,omitempty"`
 }
 
 // AgentResponse represents the response from the Fleet API for agents
 type AgentResponse struct {
-	Item   Agent    `json:"item,omitempty"`
-	Items  []Agent  `json:"items"`
-	Page   int      `json:"page"`
+	Item    Agent   `json:"item,omitempty"`
+	Items   []Agent `json:"items"`
+	Page    int     `json:"page"`
 	PerPage int     `json:"perPage"`
-	Total  int      `json:"total"`
+	Total   int     `json:"total"`
 }
 
 // AgentAction represents an action to be performed on an agent
@@ -167,7 +167,7 @@ func (c *FleetClient) GetAgentPolicies() ([]AgentPolicy, error) {
 	defer resp.Body.Close()
 
 	// Check response status
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
@@ -285,7 +285,7 @@ func (c *FleetClient) CreateAgentPolicy(policy AgentPolicy) (*AgentPolicy, error
 	defer resp.Body.Close()
 
 	// Check response status
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("API error (status %d): %s", resp.StatusCode, string(body))
 	}
@@ -324,7 +324,7 @@ func (c *FleetClient) GetEnrollmentTokens() ([]EnrollmentToken, error) {
 	defer resp.Body.Close()
 
 	// Check response status
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
@@ -362,7 +362,7 @@ func (c *FleetClient) GetPackagePolicies() ([]PackagePolicy, error) {
 	defer resp.Body.Close()
 
 	// Check response status
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
@@ -444,7 +444,7 @@ func (c *FleetClient) CreatePackagePolicy(policy PackagePolicy) (*PackagePolicy,
 	defer resp.Body.Close()
 
 	// Check response status
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("API error (status %d): %s", resp.StatusCode, string(body))
 	}
@@ -541,7 +541,7 @@ func (c *FleetClient) GetPackagePoliciesFormatted() ([]string, [][]string, error
 // GetAgents retrieves agents with optional filtering
 func (c *FleetClient) GetAgents(kuery string, page int, perPage int) ([]Agent, int, error) {
 	urlPath := fmt.Sprintf("%s/api/fleet/agents", c.baseURL)
-	
+
 	// Add query parameters if provided
 	params := make([]string, 0)
 	if kuery != "" {
@@ -553,43 +553,43 @@ func (c *FleetClient) GetAgents(kuery string, page int, perPage int) ([]Agent, i
 	if perPage > 0 {
 		params = append(params, fmt.Sprintf("perPage=%d", perPage))
 	}
-	
+
 	// Append parameters to URL
 	if len(params) > 0 {
 		urlPath = fmt.Sprintf("%s?%s", urlPath, strings.Join(params, "&"))
 	}
-	
+
 	// Create request
 	req, err := http.NewRequest("GET", urlPath, nil)
 	if err != nil {
 		return nil, 0, fmt.Errorf("creating request: %w", err)
 	}
-	
+
 	// Add auth and headers
 	if c.username != "" && c.password != "" {
 		req.SetBasicAuth(c.username, c.password)
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("kbn-xsrf", "true")
-	
+
 	// Execute request
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, 0, fmt.Errorf("executing request: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	// Check response status
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, 0, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
-	
+
 	// Parse response
 	var result AgentResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, 0, fmt.Errorf("parsing response: %w", err)
 	}
-	
+
 	return result.Items, result.Total, nil
 }
 
@@ -600,26 +600,26 @@ func (c *FleetClient) GetAgent(id string) (*Agent, error) {
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
-	
+
 	// Add auth and headers
 	if c.username != "" && c.password != "" {
 		req.SetBasicAuth(c.username, c.password)
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("kbn-xsrf", "true")
-	
+
 	// Execute request
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("executing request: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	// Check response status
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
-	
+
 	// Parse response
 	var result struct {
 		Item Agent `json:"item"`
@@ -627,7 +627,7 @@ func (c *FleetClient) GetAgent(id string) (*Agent, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("parsing response: %w", err)
 	}
-	
+
 	return &result.Item, nil
 }
 
@@ -641,38 +641,38 @@ func (c *FleetClient) UpdateAgent(id string, userMeta map[string]interface{}, ta
 	if tags != nil {
 		payload["tags"] = tags
 	}
-	
+
 	// Marshal payload
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("marshaling payload: %w", err)
 	}
-	
+
 	// Create request
 	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/api/fleet/agents/%s", c.baseURL, id), bytes.NewBuffer(data))
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}
-	
+
 	// Add auth and headers
 	if c.username != "" && c.password != "" {
 		req.SetBasicAuth(c.username, c.password)
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("kbn-xsrf", "true")
-	
+
 	// Execute request
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("executing request: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	// Check response status
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
-	
+
 	return nil
 }
 
@@ -683,32 +683,32 @@ func (c *FleetClient) DeleteAgent(id string, force bool) error {
 	if force {
 		urlPath += "?force=true"
 	}
-	
+
 	// Create request
 	req, err := http.NewRequest("DELETE", urlPath, nil)
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}
-	
+
 	// Add auth and headers
 	if c.username != "" && c.password != "" {
 		req.SetBasicAuth(c.username, c.password)
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("kbn-xsrf", "true")
-	
+
 	// Execute request
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("executing request: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	// Check response status
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
-	
+
 	return nil
 }
 
@@ -718,38 +718,38 @@ func (c *FleetClient) ReassignAgent(agentID string, policyID string) error {
 	payload := map[string]interface{}{
 		"policy_id": policyID,
 	}
-	
+
 	// Marshal payload
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("marshaling payload: %w", err)
 	}
-	
+
 	// Create request
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/api/fleet/agents/%s/reassign", c.baseURL, agentID), bytes.NewBuffer(data))
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}
-	
+
 	// Add auth and headers
 	if c.username != "" && c.password != "" {
 		req.SetBasicAuth(c.username, c.password)
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("kbn-xsrf", "true")
-	
+
 	// Execute request
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("executing request: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	// Check response status
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
-	
+
 	return nil
 }
 
@@ -760,16 +760,16 @@ func (c *FleetClient) GetAgentsFormatted(kuery string) ([]string, [][]string, er
 	if err != nil {
 		return nil, nil, err
 	}
-	
+
 	// Define headers
 	headers := []string{"ID", "Status", "Policy ID", "Type", "Last Check-in", "Tags", "Enrolled At"}
-	
+
 	// Format rows
 	rows := make([][]string, 0, len(agents))
 	for _, agent := range agents {
 		// Format tags as comma-separated list
 		tags := strings.Join(agent.Tags, ", ")
-		
+
 		row := []string{
 			agent.ID,
 			agent.Status,
@@ -781,7 +781,7 @@ func (c *FleetClient) GetAgentsFormatted(kuery string) ([]string, [][]string, er
 		}
 		rows = append(rows, row)
 	}
-	
+
 	return headers, rows, nil
 }
 
@@ -792,38 +792,38 @@ func (c *FleetClient) UpdateAgentPolicy(id string, policy AgentPolicy) (*AgentPo
 	if err != nil {
 		return nil, fmt.Errorf("marshaling policy: %w", err)
 	}
-	
+
 	// Create request
 	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/api/fleet/agent_policies/%s", c.baseURL, id), bytes.NewBuffer(policyJSON))
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
-	
+
 	// Add auth and headers
 	if c.username != "" && c.password != "" {
 		req.SetBasicAuth(c.username, c.password)
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("kbn-xsrf", "true")
-	
+
 	// Execute request
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("executing request: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	// Check response status
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
-	
+
 	// Parse response
 	var result AgentPolicyResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("parsing response: %w", err)
 	}
-	
+
 	return &result.Item, nil
 }
 
@@ -836,13 +836,13 @@ func (c *FleetClient) DeleteAgentPolicy(id string, force bool) error {
 		if err != nil {
 			return fmt.Errorf("finding default policy for reassignment: %w", err)
 		}
-		
+
 		// 2. Find all agents assigned to this policy
 		agents, _, err := c.GetAgents(fmt.Sprintf("policy_id:%s", id), 1, 1000) // Get up to 1000 agents on page 1
 		if err != nil {
 			return fmt.Errorf("finding agents assigned to policy %s: %w", id, err)
 		}
-		
+
 		// 3. Reassign all agents to the default policy
 		for _, agent := range agents {
 			if err := c.ReassignAgent(agent.ID, defaultPolicyID); err != nil {
@@ -856,27 +856,27 @@ func (c *FleetClient) DeleteAgentPolicy(id string, force bool) error {
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}
-	
+
 	// Add auth and headers
 	if c.username != "" && c.password != "" {
 		req.SetBasicAuth(c.username, c.password)
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("kbn-xsrf", "true")
-	
+
 	// Execute request
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("executing request: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	// Check response status
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("policy deletion failed with status %d: %s", resp.StatusCode, string(body))
 	}
-	
+
 	return nil
 }
 
@@ -887,14 +887,14 @@ func (c *FleetClient) getDefaultPolicyID() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	// Find the default policy
 	for _, policy := range policies {
 		if policy.IsDefault {
 			return policy.ID, nil
 		}
 	}
-	
+
 	// If no default policy found, return error
 	return "", fmt.Errorf("no default agent policy found for reassignment")
 }
@@ -906,38 +906,38 @@ func (c *FleetClient) UpdatePackagePolicy(id string, policy PackagePolicy) (*Pac
 	if err != nil {
 		return nil, fmt.Errorf("marshaling policy: %w", err)
 	}
-	
+
 	// Create request
 	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/api/fleet/package_policies/%s", c.baseURL, id), bytes.NewBuffer(policyJSON))
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
-	
+
 	// Add auth and headers
 	if c.username != "" && c.password != "" {
 		req.SetBasicAuth(c.username, c.password)
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("kbn-xsrf", "true")
-	
+
 	// Execute request
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("executing request: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	// Check response status
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
-	
+
 	// Parse response
 	var result PackagePolicyResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("parsing response: %w", err)
 	}
-	
+
 	return &result.Item, nil
 }
 
@@ -948,32 +948,32 @@ func (c *FleetClient) DeletePackagePolicy(id string, force bool) error {
 	if force {
 		urlPath = fmt.Sprintf("%s?force=true", urlPath)
 	}
-	
+
 	// Create request
 	req, err := http.NewRequest("DELETE", urlPath, nil)
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}
-	
+
 	// Add auth and headers
 	if c.username != "" && c.password != "" {
 		req.SetBasicAuth(c.username, c.password)
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("kbn-xsrf", "true")
-	
+
 	// Execute request
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("executing request: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	// Check response status
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("package policy deletion failed with status %d: %s", resp.StatusCode, string(body))
 	}
-	
+
 	return nil
 }

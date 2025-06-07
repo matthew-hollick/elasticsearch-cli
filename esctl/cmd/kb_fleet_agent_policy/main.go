@@ -33,7 +33,7 @@ var (
 	policyDescription string
 	policyNamespace   string
 	monitoringOptions []string
-	
+
 	// Delete-specific flags
 	forceDelete bool
 )
@@ -139,7 +139,7 @@ kb_fleet_agent_policy delete --policy-id=123abc --force`,
 
 // initConfig reads in config file and ENV variables if set
 func initConfig(cmd *cobra.Command, args []string) error {
-	return config.InitializeKibanaConfig(cmd, configFile, addresses, username, password, caCert, insecure, outputFormat)
+	return config.InitializeKibanaConfig(cmd, configFile, addresses, username, password, caCert, insecure, outputFormat, outputStyle)
 }
 
 // listPolicies handles listing agent policies
@@ -197,7 +197,7 @@ func createPolicy(cmd *cobra.Command, args []string) error {
 	}
 
 	// Output success message with created policy ID
-	fmt.Printf("Agent policy created successfully\nID: %s\nName: %s\nNamespace: %s\n", 
+	fmt.Printf("Agent policy created successfully\nID: %s\nName: %s\nNamespace: %s\n",
 		createdPolicy.ID, createdPolicy.Name, createdPolicy.Namespace)
 	return nil
 }
@@ -255,7 +255,7 @@ func updatePolicy(cmd *cobra.Command, args []string) error {
 	}
 
 	// Output success message with updated policy info
-	fmt.Printf("Agent policy updated successfully\nID: %s\nName: %s\nRevision: %d\n", 
+	fmt.Printf("Agent policy updated successfully\nID: %s\nName: %s\nRevision: %d\n",
 		updatedPolicy.ID, updatedPolicy.Name, updatedPolicy.Revision)
 	return nil
 }
